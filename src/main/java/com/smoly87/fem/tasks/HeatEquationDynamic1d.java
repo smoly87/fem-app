@@ -62,7 +62,7 @@ public class HeatEquationDynamic1d extends Task {
         RealVector X = solver.solve(F);*/
         K = MatrixUtils.inverse(C).multiply(K).scalarMultiply(-1); // df/dx = A*x - form of ode sys
         //solveTimeProblemFirstOrder(createStepHandler(), getInitialConditions(mesh.getPoints()).toArray(),0, Tmax, 0.01 );
-        solveTimeProblemCustomIntegrator(this::visualizeStepFromSolution, getInitialConditions(mesh.getPoints()).toArray(),0,Tmax, 0.01);
+        solveTimeProblemFirstOrder(createStepHandler(), getInitialConditions(mesh.getPoints()).toArray(),0,Tmax, 0.01);
 
         //return X.toArray();
     }

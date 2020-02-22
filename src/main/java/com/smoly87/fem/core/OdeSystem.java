@@ -23,11 +23,11 @@ public class OdeSystem implements FirstOrderDifferentialEquations {
     @Override
     public void computeDerivatives(double t, double[] y, double[] yDot) throws MaxCountExceededException, DimensionMismatchException {
         RealMatrix yMatr = new Array2DRowRealMatrix(y);
-        yMatr.setColumn(0,y);
         RealMatrix M = A.multiply(yMatr).subtract(FM);
-        yDot = M.getColumn(0);
-        double ts  =2;
+        // Don't forget, cause pointer change will just lost
+        System.arraycopy(M.getColumn(0), 0, yDot, 0, yDot.length);
     }
+
     public double[] computeDerivativesR(double t, double[] y) throws MaxCountExceededException, DimensionMismatchException {
         RealMatrix yMatr = new Array2DRowRealMatrix(y);
         yMatr.setColumn(0,y);

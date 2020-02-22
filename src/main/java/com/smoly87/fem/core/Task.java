@@ -18,6 +18,7 @@ import org.apache.commons.math3.ode.ExpandableStatefulODE;
 import org.apache.commons.math3.ode.FirstOrderConverter;
 import org.apache.commons.math3.ode.FirstOrderIntegrator;
 import org.apache.commons.math3.ode.nonstiff.ClassicalRungeKuttaIntegrator;
+import org.apache.commons.math3.ode.nonstiff.DormandPrince853Integrator;
 import org.apache.commons.math3.ode.sampling.StepHandler;
 import org.apache.commons.math3.util.Pair;
 
@@ -221,7 +222,7 @@ public class Task {
         
         return R;
     }
-    
+
      protected double[][] convertSolution(RealVector X, BoundaryConditions boundaryCond, int timeSteps ){
         double [] data = X.toArray();
         int BN = boundaryConitions.getNodesCount();
@@ -282,8 +283,16 @@ public class Task {
         integrator.integrate(new FirstOrderConverter(odeSystem2),0, Y0,tMax,Y0);
 
     }
+    protected void solveTimeProblemFirstOrder(StepHandler stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
 
-    protected void solveTimeProblem(StepHandler stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
+        OdeSystem odeSystem = new OdeSystem(K, F);
+        FirstOrderIntegrator integrator = new ClassicalRungeKuttaIntegrator(tStep);
+        integrator.addStepHandler(stepHandler);
+        double Y[] = new double[K.getRowDimension()];
+        integrator.integrate(odeSystem,0, Y0,tMax,Y);
+    }
+
+    protected void solveTimeProblemSecondOrder(StepHandler stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
         int N = K.getRowDimension();
         RealMatrix G = new Array2DRowRealMatrix(N * 2, N * 2); // To convert from second order to first
         double[][] I =  identityMatrixData(N);
@@ -293,17 +302,30 @@ public class Task {
         RealVector FG = new ArrayRealVector(N * 2);
         FG.setSubVector(N, F);
         RealVector YG = new ArrayRealVector(N * 2);
-        YG.setSubVector(0, new ArrayRealVector(Y0));
+        YG.setSubVector(N, new ArrayRealVector(Y0));
         //YG.setSubVector(0, new ArrayRealVector(Y0));
 
         OdeSystem odeSystem = new OdeSystem(G, FG);
-        FirstOrderIntegrator integrator = new ClassicalRungeKuttaIntegrator(tStep);
+       // FirstOrderIntegrator integrator = new ClassicalRungeKuttaIntegrator(tStep);
+        FirstOrderIntegrator integrator = new DormandPrince853Integrator(1.0e-8, 100.0, 1.0e-10, 1.0e-10);
         integrator.addStepHandler(stepHandler);
         double[] Y = new double[N * 2];
 
         integrator.integrate(odeSystem,0, YG.toArray(),tMax,Y);
-        System.out.println();
     }
+
+    private String showMatrix(RealMatrix A) {
+        List<String> rows = new ArrayList<>(A.getRowDimension());
+        for(int i = 0; i < A.getRowDimension();i++) {
+            List<String> values = new ArrayList<>(A.getColumnDimension());
+            for(int j = 0 ; j < A.getColumnDimension(); j++) {
+                values.add(Double.toString(A.getEntry(i,j)));
+            }
+            rows.add(values.stream().collect(Collectors.joining(",")));
+        }
+        return rows.stream().collect(Collectors.joining("\n"));
+    }
+
     protected void solveTimeProblemCustomIntegrator(BiConsumer<Double, Double[]> stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
         int N = K.getRowDimension();
         RealMatrix G = new Array2DRowRealMatrix(N * 2, N * 2); // To convert from second order to first
@@ -323,7 +345,7 @@ public class Task {
         integrator.integrate(odeSystem, YG.toArray(), tStep, tMin, tMax);
 
     }
-    protected void solveTimeProblemFirstOrder(StepHandler stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
+    /*protected void solveTimeProblemFirstOrder(StepHandler stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
         int N = K.getRowDimension();
 
 
@@ -333,7 +355,7 @@ public class Task {
         double[] Y = new double[Y0.length];
         integrator.integrate(odeSystem,   tMin,Y0,  tMax, Y);
 
-    }
+    }*/
 
     protected void solveTimeProblemFirstOrderCustom(BiConsumer<Double, Double[]> stepHandler, double[] Y0, double tMin, double tMax, double tStep) {
         int N = K.getRowDimension();

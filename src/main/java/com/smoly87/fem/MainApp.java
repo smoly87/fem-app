@@ -23,16 +23,14 @@ public class MainApp {
     public static void main(String[] args) {
        /* PhiEquation1d1 task = new PhiEquation1d1(3);
         System.out.println(task.solve());*/
-  /*double[] d = new double[4];
-  df(d);
-        System.out.println(d[1]);*/
+
        Injector injector = Guice.createInjector(new MainModule());
        WaveEquation1d task = injector.getInstance(WaveEquation1d.class);
        task.solve(100);
 
-        /*HeatEquationDynamic1d task = injector.getInstance(HeatEquationDynamic1d.class);
+       /* HeatEquationDynamic1d task = injector.getInstance(HeatEquationDynamic1d.class);
         task.solve(2);*/
-        //testCircle();
+       // testCircle();
     }
 
     protected static void testCircle() {
@@ -40,7 +38,7 @@ public class MainApp {
         FirstOrderDifferentialEquations ode = new CircleODE(new double[] { 0.0, 0.0 }, 1);
         double[] y = new double[] { 0.0, 1.0 }; // initial state
         //dp853.addStepHandler(createStepHandler());
-        dp853.integrate(ode, 0.0, y, 4, y); // now y contains final state at time t=16.0
+        dp853.integrate(ode, 0.0, y, 1, y); // now y contains final state at time t=16.0
         System.out.println("ans"+ y[0] + ";" +y[1]);
     }
 
