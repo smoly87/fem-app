@@ -22,6 +22,7 @@ import java.util.ArrayList;
 // This task is from page 108 Zenkevic
 // Try to eliminate rows with boundary conditions end estimate accuracy.
 public class HeatEquationDynamic1d extends Task {
+    // C appears from time derivatives for example d/dt or d2/dt2
     protected RealMatrix C;
     @Inject
     public HeatEquationDynamic1d(){

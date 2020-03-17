@@ -2,6 +2,7 @@ package com.smoly87.fem;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.smoly87.fem.tasks.HeatEquation2d;
 import com.smoly87.fem.tasks.HeatEquationDynamic1d;
 import com.smoly87.fem.tasks.PhiEquation1d1;
 import com.smoly87.fem.tasks.WaveEquation1d;
@@ -25,9 +26,10 @@ public class MainApp {
         System.out.println(task.solve());*/
 
        Injector injector = Guice.createInjector(new MainModule());
-       WaveEquation1d task = injector.getInstance(WaveEquation1d.class);
-       task.solve(100);
-
+      /* WaveEquation1d task = injector.getInstance(WaveEquation1d.class);
+       task.solve(100);*/
+        HeatEquation2d task = injector.getInstance(HeatEquation2d.class);
+        task.solve();
        /* HeatEquationDynamic1d task = injector.getInstance(HeatEquationDynamic1d.class);
         task.solve(2);*/
        // testCircle();

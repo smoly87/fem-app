@@ -13,6 +13,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import com.smoly87.fem.tasks.CustomRungeCutta;
+import com.smoly87.fem.tasks.tension2d.SystemBlockMatrix;
 import org.apache.commons.math3.linear.*;
 import org.apache.commons.math3.ode.ExpandableStatefulODE;
 import org.apache.commons.math3.ode.FirstOrderConverter;
@@ -250,15 +251,17 @@ public class Task {
         }
         
         return M;
-    } 
-    
+    }
+
+
+
     protected RealMatrix fillGlobalStiffness(RealMatrix M, double[][] MLoc) {
         List<Element> elements = mesh.getElements();
         for (int i = 0; i < elements.size(); i++) {
             Element elem = elements.get(i);
             M = this.arrangeInGlobalStiffness(M, MLoc, elem.getNodesList());
         }
-        
+
         return M;
     }
 

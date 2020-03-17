@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.smoly87.fem.core.elemfunc.d2;
+package com.smoly87.fem.core.elemfunc.d2.uniform;
 
 import com.smoly87.fem.core.ElemFunc2d;
 import com.smoly87.fem.core.ElemFuncType;
@@ -61,7 +61,7 @@ public class LinUniformTriangle extends ElemFunc2d implements UnivariateFunction
     protected double[] g;
     protected RealMatrix detMat;
     protected DecompositionSolver coofSolver;
-    protected LinTriangleWrapper innerInteg;
+    protected LinUniformTriangleWrapper innerInteg;
     protected SimpsonIntegrator integrator;
     protected SimpsonIntegrator integrator2;
     protected double L1;
@@ -97,7 +97,7 @@ public class LinUniformTriangle extends ElemFunc2d implements UnivariateFunction
         
         integrator = new SimpsonIntegrator();
          integrator2 = new SimpsonIntegrator();
-        innerInteg = new LinTriangleWrapper(this);
+        innerInteg = new LinUniformTriangleWrapper(this);
     }
     
     protected double[] pointValues(Element element, int nodeInd){
@@ -107,10 +107,6 @@ public class LinUniformTriangle extends ElemFunc2d implements UnivariateFunction
     }
     
     protected double countDet(Element element){
-       
-        
-       
-        
        return new  LUDecomposition(detMat).getDeterminant();
     }
     
@@ -234,7 +230,9 @@ public class LinUniformTriangle extends ElemFunc2d implements UnivariateFunction
     }
     
     public double innerValue(double L2){
-        //if(L1 + L2 > 1) return 0;
+        if(L1 + L2 > 1.0001) {
+            System.out.println("L1 + L2 > 1");
+        }
         double[] args = new double[]{1-L1-L2,L1, L2};
         double v1 = applyFuncCall(f1, 0, args);
         double v2 = applyFuncCall(f2, 1, args);

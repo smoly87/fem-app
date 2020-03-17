@@ -17,10 +17,10 @@ public class MainModule extends AbstractModule {
         return ScreenConfig.builder()
                 .setScreenWidth(1000)
                 .setScreenHeight(1000)
-                .setxMin(-5d)
-                .setxMax(5d)
-                .setyMin(-5d)
-                .setyMax(5d)
+                .setxMin(-2d)
+                .setxMax(2d)
+                .setyMin(-2d)
+                .setyMax(2d)
                 .build();
     }
 
