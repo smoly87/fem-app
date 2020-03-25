@@ -5,9 +5,9 @@
  */
 package com.smoly87.fem.tasks;
 
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import org.apache.commons.math3.linear.*;
-import org.apache.commons.math3.util.Pair;
 
 /**
  *
@@ -38,7 +38,7 @@ public class PhiEquation1d1 extends Task {
         
         double[] QBound = new double[]{0, 1};
         Integer[] boundNodes = new Integer[]{0, mesh.getNodesCount()-1};
-        boundaryConitions = new BoundaryConditions(QBound, boundNodes);
+        boundaryConitions = new BoundaryConditionsOld(QBound, boundNodes);
         
         F = this.applyBoundaryConditionsToRightPart(K, F, boundaryConitions);
         K = this.applyBoundaryConditionsToLeftPart(K,  boundaryConitions);

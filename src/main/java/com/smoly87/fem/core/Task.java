@@ -12,10 +12,9 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.tasks.CustomRungeCutta;
-import com.smoly87.fem.tasks.tension2d.SystemBlockMatrix;
 import org.apache.commons.math3.linear.*;
-import org.apache.commons.math3.ode.ExpandableStatefulODE;
 import org.apache.commons.math3.ode.FirstOrderConverter;
 import org.apache.commons.math3.ode.FirstOrderIntegrator;
 import org.apache.commons.math3.ode.nonstiff.ClassicalRungeKuttaIntegrator;
@@ -31,9 +30,9 @@ public class Task {
     protected RealMatrix K;
     protected RealVector F;
     protected Mesh mesh;
-    protected BoundaryConditions boundaryConitions;
+    protected BoundaryConditionsOld boundaryConitions;
  
-    public BoundaryConditions getBoundaryConitions() {
+    public BoundaryConditionsOld getBoundaryConitions() {
         return boundaryConitions;
     }
     
@@ -56,19 +55,19 @@ public class Task {
         return arr;
     }
 
-    protected  RealVector applyBoundaryConditionsToRightPart(RealMatrix KG, RealVector FG, BoundaryConditions boundaryConditions) {
+    protected  RealVector applyBoundaryConditionsToRightPart(RealMatrix KG, RealVector FG, BoundaryConditionsOld boundaryConditions) {
         int N = KG.getRowDimension();
         for(int k = 0; k < boundaryConditions.getNodesCount(); k++){
-            int i = boundaryConditions.getPointIndex(k);
-            double Qbound = boundaryConditions.getBoundaryValue1d(i);
+            int absBoundaryInd = boundaryConditions.getPointIndex(k);
+            double boundaryVal = boundaryConditions.getBoundaryValue(absBoundaryInd);
             for(int j = 0; j < N; j++){
-                if(j != i){
-                    FG.addToEntry(j, -KG.getEntry(j, i) * Qbound);
+                if(j != absBoundaryInd){
+                    FG.addToEntry(j, -KG.getEntry(j, absBoundaryInd) * boundaryVal);
                 }
             }
         }
         int B = boundaryConditions.getNodesCount();
-        Set<Integer> boundaryIndexes = boundaryConditions.getBoundIndexes().stream().collect(Collectors.toSet());
+        Set<Integer> boundaryIndexes = boundaryConditions.getBoundIndexesAbs().stream().collect(Collectors.toSet());
         double[] FN = new double[N - B];
         int r = 0;
         for(int i = 0; i < N; i++) {
@@ -79,41 +78,60 @@ public class Task {
         return new ArrayRealVector(FN);
     }
 
-    protected RealMatrix applyBoundaryConditionsToLeftPart(RealMatrix KG, BoundaryConditions boundaryConditions){
+    protected RealMatrix applyBoundaryConditionsToLeftPart(RealMatrix KG, BoundaryConditionsOld boundaryConditions){
+        return applyBoundaryConditionsToLeftPart(KG, List.of(boundaryConditions));
+    }
+
+    protected RealMatrix applyBoundaryConditionsToLeftPart(RealMatrix KG,
+                                                           List<BoundaryConditionsOld> boundaryConditionsList) {
+        BoundaryConditionsOld boundaryConditions = boundaryConditionsList.get(0);
         int N = KG.getRowDimension();
         int B = boundaryConditions.getNodesCount();
-        Set<Integer> boundaryIndexes = boundaryConditions.getBoundIndexes().stream().collect(Collectors.toSet());
-        double[][] KgN = new double[N - B][N - B];
-        int r = 0;
-        int c = 0;
-        for(int i = 0; i < N; i++) {
-            if (boundaryIndexes.contains(i) ) continue;
-            c = 0;
-            for (int j = 0; j < N; j++) {
-                if (boundaryIndexes.contains(j)) continue;
-                KgN[r][c] = KG.getData()[i][j];
-                c++;
+        int size = N - B * boundaryConditions.getDimCount();
+        RealMatrix R = new Array2DRowRealMatrix(size, size);
+
+        ArrayList<Pair<Integer, Integer>> intervalsListPairs = createIntervalPairs(boundaryConditions, N);
+        int startInd = 0;
+        for(int i = 0; i < intervalsListPairs.size(); i++) {
+            int from = intervalsListPairs.get(i).getFirst();
+            int to = intervalsListPairs.get(i).getSecond();
+            int len = to - from;
+
+            if (i > 0) {
+                from++;
             }
-            r++;
+
+            if (i == intervalsListPairs.size() - 1) {
+                len++;
+            }
+
+            System.arraycopy(KG, from, R, startInd, len);
+            startInd += len;
         }
-        return new Array2DRowRealMatrix(KgN);
+        return R;
     }
 
-    protected RealMatrix removeElemsForBoundConds(RealMatrix A, BoundaryConditions boundaryConditions) {
-        for(int innoundInd: boundaryConditions.getBoundIndexes()) {
-            A.setRow(innoundInd, new double[A.getColumnDimension()]);
-            A.setEntry(innoundInd, innoundInd, 1d);
+    protected ArrayList<Pair<Integer, Integer>> createIntervalPairs(BoundaryConditionsOld boundaryConditions, int matrixSize) {
+        int B = boundaryConditions.getNodesCount();
+        int N = matrixSize;
+
+        List<Integer> intervalsList = new ArrayList<>();
+        ArrayList<Pair<Integer, Integer>> intervalsListPairs = new ArrayList<>();
+        intervalsList.add(0);
+        for(int k = 0; k < B; k++){
+            intervalsList.add(boundaryConditions.getBoundIndexes().get(k));
         }
-        return A;
+        intervalsList.add(N);
+
+        for(int i = 0; i < B - 1; i++) {
+            int start = intervalsList.get(i);
+            int end = intervalsList.get(i + 1);
+            if (start == end) continue;
+            intervalsListPairs.add(Pair.create(start, end));
+        }
+        return intervalsListPairs;
     }
 
-    protected RealVector removeElemsForBoundConds(RealVector F, BoundaryConditions boundaryConditions) {
-        for(int innoundInd: boundaryConditions.getBoundIndexes()) {
-            F.setEntry(innoundInd, boundaryConditions.getBoundaryValue1d(innoundInd));
-        }
-        return F;
-    }
-    
     protected double[][] fillStiffnessMatrix(Element elem, KlmFunction KLMFunc){
       int N = elem.nodesList.size();
     
@@ -199,7 +217,7 @@ public class Task {
         return G;
     }
     
-    public static double[] restoreBoundary(double[]X,  BoundaryConditions boundaryConditions){
+    public static double[] restoreBoundary(double[]X,  BoundaryConditionsOld boundaryConditions){
         int BN = boundaryConditions.getNodesCount();
         int N = X.length + BN;
         double[] R = new double[N];
@@ -210,7 +228,7 @@ public class Task {
         l = pointInd;
         for(int k = 0; k < BN - 1; k++){
             pointInd = boundaryConditions.getPointIndex(k);
-            R[pointInd] = boundaryConditions.getBoundaryValue1d(k);
+            R[pointInd] = boundaryConditions.getBoundaryValue(k);
             int partLen = boundaryConditions.getPointIndex(k + 1) - pointInd - 1;
             System.arraycopy(X, l , R, pointInd+1,  partLen);
             l += partLen;
@@ -218,13 +236,13 @@ public class Task {
         
        // Part from last index to end of X also should be considered.
         pointInd = boundaryConditions.getPointIndex(BN - 1);
-        R[pointInd] = boundaryConditions.getBoundaryValue1d(BN - 1);
+        R[pointInd] = boundaryConditions.getBoundaryValue(BN - 1);
         System.arraycopy(X, l, R, pointInd+1, N - 1 - pointInd);
         
         return R;
     }
 
-     protected double[][] convertSolution(RealVector X, BoundaryConditions boundaryCond, int timeSteps ){
+     protected double[][] convertSolution(RealVector X, BoundaryConditionsOld boundaryCond, int timeSteps ){
         double [] data = X.toArray();
         int BN = boundaryConitions.getNodesCount();
         int N = data.length / timeSteps  ;

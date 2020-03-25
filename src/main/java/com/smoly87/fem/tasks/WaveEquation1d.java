@@ -6,16 +6,16 @@
 package com.smoly87.fem.tasks;
 
 import com.google.inject.Inject;
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import com.smoly87.rendering.*;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.*;
 import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.ode.SecondOrderDifferentialEquations;
 import org.apache.commons.math3.ode.sampling.StepHandler;
 import org.apache.commons.math3.ode.sampling.StepInterpolator;
-import org.apache.commons.math3.util.Pair;
+
 import static  java.lang.Math.sin;
 import static  java.lang.Math.PI;
 
@@ -79,7 +79,7 @@ public class WaveEquation1d extends Task {
         F = fillForces(F); //No need forces!
         double[] QBound = new double[]{0, 0}; // Fix nodes position on the both end of the string.
         Integer[] boundNodes = new Integer[]{0, mesh.getNodesCount() - 1};
-        boundaryConitions = new BoundaryConditions(QBound, boundNodes);
+        boundaryConitions = new BoundaryConditionsOld(QBound, boundNodes);
 
         F = this.applyBoundaryConditionsToRightPart(K, F, boundaryConitions);
         K = this.applyBoundaryConditionsToLeftPart(K,  boundaryConitions);

@@ -1,4 +1,4 @@
-package com.smoly87.fem.tasks.tension2d;
+package com.smoly87.fem.core.blockmatrix;
 
 import com.smoly87.fem.core.ElemFuncType;
 import com.smoly87.fem.core.Element;
@@ -17,10 +17,26 @@ public class SystemBlockMatrix {
         rows = new ArrayList<>(rowCount);
     }
 
+    public SystemBlockMatrix(ElemFuncType[][] values, double[][] multiplicator) {
+        for(int i = 0; i < values.length; i++ ) {
+            for (int j = 0; j < values[i].length; j++) {
+                addValueToEntry(i, j,  new SystemBlockItem(values[i][j], ElemFuncType.I, multiplicator[i][j]));
+            }
+        }
+    }
+
     public SystemBlockMatrix(ElemFuncType[][] values) {
         for(int i = 0; i < values.length; i++ ) {
             for (int j = 0; j < values[i].length; j++) {
                 addValueToEntry(i, j,  new SystemBlockItem(values[i][j], ElemFuncType.I, 1.0d) );
+            }
+        }
+    }
+
+    public SystemBlockMatrix(double[][] values) {
+        for(int i = 0; i < values.length; i++ ) {
+            for (int j = 0; j < values[i].length; j++) {
+                addValueToEntry(i, j,  new SystemBlockItem(ElemFuncType.I, ElemFuncType.I, values[i][j]) );
             }
         }
     }

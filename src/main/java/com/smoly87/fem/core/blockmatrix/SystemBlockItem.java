@@ -1,4 +1,4 @@
-package com.smoly87.fem.tasks.tension2d;
+package com.smoly87.fem.core.blockmatrix;
 
 import com.smoly87.fem.core.ElemFuncType;
 

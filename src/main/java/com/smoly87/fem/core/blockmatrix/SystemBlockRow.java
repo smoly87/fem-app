@@ -1,7 +1,6 @@
-package com.smoly87.fem.tasks.tension2d;
+package com.smoly87.fem.core.blockmatrix;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class SystemBlockRow {
     protected int rowSize;

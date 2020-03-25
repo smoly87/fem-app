@@ -6,12 +6,12 @@
 package com.smoly87.fem.tasks;
 
 import com.google.inject.Inject;
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.linear.*;
 import org.apache.commons.math3.ode.sampling.StepHandler;
 import org.apache.commons.math3.ode.sampling.StepInterpolator;
-import org.apache.commons.math3.util.Pair;
 
 import java.util.ArrayList;
 
@@ -47,7 +47,7 @@ public class HeatEquationDynamic1d extends Task {
 
         double[] QBound = new double[]{0, 0};
         Integer[] boundNodes = new Integer[]{0, N - 1};
-        boundaryConitions = new BoundaryConditions(QBound, boundNodes);
+        boundaryConitions = new BoundaryConditionsOld(QBound, boundNodes);
 
         // need to keep the certain order.
         F = this.applyBoundaryConditionsToRightPart(K, F, boundaryConitions);

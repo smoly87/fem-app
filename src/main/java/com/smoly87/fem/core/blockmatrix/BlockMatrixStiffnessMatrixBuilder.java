@@ -1,8 +1,8 @@
-package com.smoly87.fem.tasks.tension2d;
+package com.smoly87.fem.core.blockmatrix;
 
 import com.smoly87.fem.core.Element;
-import com.smoly87.fem.core.KlmFunction;
 import com.smoly87.fem.core.Mesh;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import java.util.ArrayList;
@@ -10,14 +10,14 @@ import java.util.List;
 
 public class BlockMatrixStiffnessMatrixBuilder {
 
-    public static RealMatrix fillGlobalStiffness(Mesh mesh, RealMatrix M, SystemBlockMatrix S) {
+    public static RealMatrix fillGlobalStiffness(Mesh mesh,  SystemBlockMatrix S) {
+        int N = mesh.getNodesCount();
+        RealMatrix M = new Array2DRowRealMatrix(N, N);
         ArrayList<Element> elements = mesh.getElements();
         for (int i = 0; i < elements.size(); i++) {
             Element elem = elements.get(i);
-
             M = arrangeInGlobalStiffnessElementMatrix(elem, M, S, elem.getNodesList());
         }
-
         return M;
     }
 
