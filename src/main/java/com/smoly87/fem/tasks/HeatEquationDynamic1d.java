@@ -6,6 +6,7 @@
 package com.smoly87.fem.tasks;
 
 import com.google.inject.Inject;
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditions;
 import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -14,6 +15,7 @@ import org.apache.commons.math3.ode.sampling.StepHandler;
 import org.apache.commons.math3.ode.sampling.StepInterpolator;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -45,14 +47,15 @@ public class HeatEquationDynamic1d extends Task {
         C = new Array2DRowRealMatrix(N, N);
         C = fillGlobalStiffness(C, this::Clm);
 
-        double[] QBound = new double[]{0, 0};
-        Integer[] boundNodes = new Integer[]{0, N - 1};
-        boundaryConitions = new BoundaryConditionsOld(QBound, boundNodes);
+        boundaryConditions = BoundaryConditions.builder(1)
+                .setPointIndexes(List.of(0, N - 1))
+                .addValues(new double[]{0, 0})
+                .build();
 
         // need to keep the certain order.
-        F = this.applyBoundaryConditionsToRightPart(K, F, boundaryConitions);
-        K = this.applyBoundaryConditionsToLeftPart(K, boundaryConitions);
-        C = this.applyBoundaryConditionsToLeftPart(C, boundaryConitions);
+        F = boundaryConditions.applyBoundaryConditionsToRightPart(K, F);
+        K = boundaryConditions.applyBoundaryConditionsToLeftPart(K);
+        C = boundaryConditions.applyBoundaryConditionsToLeftPart(C);
 
     }
 
@@ -87,7 +90,7 @@ public class HeatEquationDynamic1d extends Task {
     }
     protected RealVector getInitialConditions(ArrayList<Vector> points) {
         int N = points.size();
-        double[] values = new double[N - boundaryConitions.getNodesCount()];
+        double[] values = new double[N - boundaryConditions.getBoundaryNodesCount()];
         values[0] = 1;
         return new ArrayRealVector(values);
     }

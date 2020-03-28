@@ -1,5 +1,8 @@
 package com.smoly87.fem.core.boundaryconditions;
 
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +12,7 @@ public class BoundaryConditions {
     protected final int boundaryNodesCount;
     protected final double[][] values;
     protected final ArrayList<Integer> boundIndexes;
+    protected final BoundaryConditionsProcessor boundaryConditionsProcessor;
 
     public int getDimCount() {
         return dimCount;
@@ -23,13 +27,14 @@ public class BoundaryConditions {
     }
 
     protected BoundaryConditions(int dimCount,
-                              int boundaryNodesCount,
-                              double[][] values,
-                              ArrayList<Integer> boundIndexes) {
+                                 int boundaryNodesCount,
+                                 double[][] values,
+                                 ArrayList<Integer> boundIndexes) {
         this.dimCount = dimCount;
         this.boundaryNodesCount = boundaryNodesCount;
         this.boundIndexes = boundIndexes;
         this.values = values;
+        this.boundaryConditionsProcessor = new BoundaryConditionsProcessor(this);
     }
 
     public static BoundaryConditionsBuilder builder(int dimCount) {
@@ -37,12 +42,11 @@ public class BoundaryConditions {
     }
 
     public double[] getBoundValues(int pointInd) {
-       return values[pointInd];
+        return values[pointInd];
     }
 
     /**
-     *
-     * @param pointInd Relative point index(number of a node)
+     * @param pointInd    Relative point index(number of a node)
      * @param variableInd Index of the variable(for systems values follow in format(u1,v1,u2,v2))
      * @return
      */
@@ -56,19 +60,33 @@ public class BoundaryConditions {
         int relPointPos = getBoundIndexes().get(pointInd);
         int absInd = relPointPos * dimCount;
         List<Integer> res = new ArrayList<>(dimCount);
-        for(int i = 0; i < dimCount; i++) {
-            res.add(absInd + i) ;
+        for (int i = 0; i < dimCount; i++) {
+            res.add(absInd + i);
         }
         return res;
     }
 
     public List<Integer> getBoundIndexesAbs() {
-        int B =  getBoundaryNodesCount();
+        int B = getBoundaryNodesCount();
         List<Integer> res = new ArrayList<>(dimCount * B);
-        for(int ind = 0; ind < B; ind++) {
-          List<Integer> curIndValues = getBoundIndexAbs(ind);
-          res.addAll(curIndValues);
+        for (int ind = 0; ind < B; ind++) {
+            List<Integer> curIndValues = getBoundIndexAbs(ind);
+            res.addAll(curIndValues);
         }
         return res;
+    }
+
+    public RealMatrix applyBoundaryConditionsToLeftPart(RealMatrix KG) {
+        return boundaryConditionsProcessor.applyBoundaryConditionsToLeftPart(KG);
+    }
+
+
+    public RealVector applyBoundaryConditionsToRightPart(RealMatrix KG,
+                                                         RealVector FG) {
+        return boundaryConditionsProcessor.applyBoundaryConditionsToRightPart(KG, FG);
+    }
+
+    public double[] restoreBoundaryConditions(double[] Y) {
+        return boundaryConditionsProcessor.restoreBoundaryConditions(Y);
     }
 }

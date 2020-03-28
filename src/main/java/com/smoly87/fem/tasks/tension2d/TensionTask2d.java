@@ -1,11 +1,9 @@
 package com.smoly87.fem.tasks.tension2d;
 
-import com.google.common.collect.Streams;
 import com.smoly87.fem.core.blockmatrix.BlockMatrixStiffnessMatrixBuilder;
 import com.smoly87.fem.core.blockmatrix.SystemBlockMatrix;
 import com.smoly87.fem.core.boundaryconditions.BoundaryConditions;
 import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsBuilder;
-import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import com.smoly87.fem.core.elemfunc.d2.lin.LinTriangleBuilder;
 import com.smoly87.meshloader.MeshLoaderGmsh;
@@ -23,9 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.sin;
-
 public class TensionTask2d extends Task {
     protected final int DIM_COUNT = 2; // (ux, uy) shifts by x and y
     protected final double INITIAL_OFFSET = 0.001;
@@ -40,7 +35,18 @@ public class TensionTask2d extends Task {
         this.sceneRender = sceneRender;
     }
 
-    protected void fillMatrixes(){
+    protected void fillMatrixes() {
+        int N = mesh.getNodesCount();
+        K = fillK();
+        C = fillC();
+        boundaryConditions = this.getBoundaryConditions();
+
+        F = boundaryConditions.applyBoundaryConditionsToRightPart(K, F);
+        K = boundaryConditions.applyBoundaryConditionsToLeftPart(K);
+        C = boundaryConditions.applyBoundaryConditionsToLeftPart(C);
+    }
+
+    protected RealMatrix fillK() {
         final double v = 0.1;
         final double E = 0.1;
         RealMatrix Dkoofs = new Array2DRowRealMatrix(new double[][]{
@@ -62,14 +68,24 @@ public class TensionTask2d extends Task {
         });
         // Forces should be set separately
         SystemBlockMatrix SymbK = B.multiply(D).multiply(B);
-        K = BlockMatrixStiffnessMatrixBuilder.fillGlobalStiffness(mesh, SymbK);
-
-        int N = mesh.getNodesCount();
-        C = new Array2DRowRealMatrix(N, N);
-        C = fillGlobalStiffness(C, this::Clm); // TODO: How C looks like ? Probably Nl * Nm But what about dimension ?
+        RealMatrix K = BlockMatrixStiffnessMatrixBuilder.fillGlobalStiffness(mesh, SymbK);
+        return K;
     }
 
-    protected BoundaryConditions getBoundaryConditions() {
+    protected RealMatrix fillC() {
+        SystemBlockMatrix Nm = new SystemBlockMatrix(new ElemFuncType[][]{
+                {ElemFuncType.dFdx, ElemFuncType.I},
+                {ElemFuncType.I, ElemFuncType.dFdy},
+        }, new double[][]{
+                {1, 0},
+                {0, 1},
+        });
+        RealMatrix C = BlockMatrixStiffnessMatrixBuilder.fillGlobalStiffness(mesh, Nm);
+        return C;
+    }
+
+    @Override
+    public BoundaryConditions getBoundaryConditions() {
         int boundaryPointsCount = (int)mesh.getPoints()
                 .stream().filter(vector -> Math.abs(vector.getCoordinates()[0]) < delta)
                 .count();
@@ -102,6 +118,7 @@ public class TensionTask2d extends Task {
                 Y0[ind] = INITIAL_OFFSET;
             }
         }
+        return new ArrayRealVector(Y0);
     }
 
     protected void init() {
@@ -124,8 +141,8 @@ public class TensionTask2d extends Task {
         K = CInv.multiply(K).scalarMultiply(-1); // df/dx = A*x - form of ode sys       //
         RealMatrix FM = new Array2DRowRealMatrix(F.toArray());
         F = new ArrayRealVector(CInv.multiply(FM).getColumn(0)) ;
-        double[] Y0; // The also cut boundary conditions
-        solveTimeProblemSecondOrder(createStepHandler(), getInitialConditions(mesh.getPoints()).toArray(),0, Tmax, 0.01 );
+        double[] Y0 = getInitialConditions(mesh.getPoints(), DIM_COUNT).toArray(); // The also cut boundary conditions
+        solveTimeProblemSecondOrder(createStepHandler(), Y0 ,0, Tmax, 0.01 );
     }
 
     protected StepHandler createStepHandler() {
@@ -150,17 +167,25 @@ public class TensionTask2d extends Task {
         return stepHandler;
     }
 
+    protected double[] convertToCoordinatesOnlySolution(double[] y) {
+        int N = y.length / 2;
+        double[] res = new double[N];
+        System.arraycopy(y, N, res, 0, N);
+        return res;
+    }
+
     protected void visualizeStepFromSolution(double t, double[] y) {
-        // TODO: restore boundaries and removes speed information, after that it will be (u1, v1, u2, v2,...)
+        y = convertToCoordinatesOnlySolution(y);
         List<Body> bodies = new ArrayList<>();
         int N = y.length / 2;
         int i = 0;
         for(Element element: mesh.getElements()) {
+            double[] finalY = y;
             List<Vector2D> curElemVertexes = element.getNodesList().stream()
                     .map(pointInd -> {
                         double[] coords = mesh.getPoints().get(pointInd).getCoordinates();
-                        coords[0] = coords[0] + y[pointInd * 2]; // x offset
-                        coords[1] = coords[1] + y[pointInd * 2]; // y offset
+                        coords[0] = coords[0] + finalY[pointInd * 2]; // x offset
+                        coords[1] = coords[1] + finalY[pointInd * 2]; // y offset
                         return new Vector2D(coords);
                     })
                     .collect(Collectors.toList());

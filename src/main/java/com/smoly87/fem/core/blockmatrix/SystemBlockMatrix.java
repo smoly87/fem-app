@@ -6,18 +6,23 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+
 public class SystemBlockMatrix {
-    protected ArrayList<SystemBlockRow> rows;
+    protected HashMap<Integer, SystemBlockRow> rows;
     protected int rowCount;
     protected int colCount;
 
     public SystemBlockMatrix(int rowCount, int colCount) {
         this.rowCount = rowCount;
         this.colCount = colCount;
-        rows = new ArrayList<>(rowCount);
+        rows = new HashMap<>();
     }
 
     public SystemBlockMatrix(ElemFuncType[][] values, double[][] multiplicator) {
+        rows = new HashMap<>();
+        this.rowCount = values.length;
+        this.colCount = values[0].length;
         for(int i = 0; i < values.length; i++ ) {
             for (int j = 0; j < values[i].length; j++) {
                 addValueToEntry(i, j,  new SystemBlockItem(values[i][j], ElemFuncType.I, multiplicator[i][j]));
@@ -42,6 +47,7 @@ public class SystemBlockMatrix {
     }
 
     public void addValueToEntry(int rowNum, int colNum, SystemBlockItem systemBlockItem) {
+        rows.computeIfAbsent(rowNum, (r) -> new SystemBlockRow(colCount) );
         rows.get(rowNum).addEntry(colNum, systemBlockItem);
     }
 
@@ -61,12 +67,12 @@ public class SystemBlockMatrix {
        return result;
     }
 
-    private double calculate( SystemBlockItems blockItems, Element elem, Integer l, Integer m) {
+    private double calculate(SystemBlockItems blockItems, Element elem, Integer l, Integer m) {
         double s = 0;
         for(int i = 0; i < blockItems.size(); i++) {
             s += elem.getElemFunc().integrate(
                     blockItems.getItem(i).getElemFuncType1(),
-                    blockItems.getItem(i).getElemFuncType1(), l, m);
+                    blockItems.getItem(i).getElemFuncType2(), l, m);
         }
         return s;
     }

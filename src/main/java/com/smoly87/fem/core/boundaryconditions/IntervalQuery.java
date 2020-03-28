@@ -17,9 +17,9 @@ public class IntervalQuery {
         return len;
     }
 
-    public IntervalQuery(Integer start, Integer end, Integer len) {
+    public IntervalQuery(Integer start, Integer end) {
         this.start = start;
         this.end = end;
-        this.len = len;
+        this.len = end - start;
     }
 }

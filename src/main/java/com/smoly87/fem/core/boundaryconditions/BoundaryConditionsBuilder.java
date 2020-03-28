@@ -1,9 +1,9 @@
 package com.smoly87.fem.core.boundaryconditions;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class BoundaryConditionsBuilder {
     protected ArrayList<Integer> pointIndexes;
@@ -15,8 +15,8 @@ public class BoundaryConditionsBuilder {
         values = new double[dimCount][];
     }
 
-    public BoundaryConditionsBuilder setPointIndexes(ArrayList<Integer> pointIndexes) {
-        this.pointIndexes = pointIndexes;
+    public BoundaryConditionsBuilder setPointIndexes(List<Integer> pointIndexes) {
+        this.pointIndexes = new ArrayList<>(pointIndexes);
         return this;
     }
 
@@ -25,6 +25,10 @@ public class BoundaryConditionsBuilder {
         checkArgument(dimInd < dimCount, "Dimensions index  exceeds range");
         this.values[dimInd] = values;
         return this;
+    }
+
+    public BoundaryConditionsBuilder addValues( double[] values) {
+        return addValues(0, values);
     }
 
     public BoundaryConditions build() {

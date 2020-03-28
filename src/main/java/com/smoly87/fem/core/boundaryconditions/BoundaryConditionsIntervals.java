@@ -4,6 +4,9 @@ import org.apache.commons.math3.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 // TODO: block size and the list of the conditions
 public class BoundaryConditionsIntervals {
     public static double[][] copy2dArray(double[][] A, List<IntervalQuery> intervalQueryList, int blockSize, int condCount) {
@@ -30,50 +33,40 @@ public class BoundaryConditionsIntervals {
         return res;
     }
 
-    public static List<IntervalQuery> createIntervalPairsRequests(BoundaryConditions boundaryConditions, int matrixSize) {
-        ArrayList<Pair<Integer, Integer>> intervalsListPairs = createIntervalPairs(boundaryConditions, matrixSize);
-        List<IntervalQuery> intervalQueryList = transformIntervalPairsToRequests(intervalsListPairs);
-        return intervalQueryList;
-    }
-
-    public static List<IntervalQuery> transformIntervalPairsToRequests(ArrayList<Pair<Integer, Integer>> intervalsListPairs) {
-        List<IntervalQuery> intervalQueriesList = new ArrayList<>();
-        for(int i = 0; i < intervalsListPairs.size(); i++) {
-            int from = intervalsListPairs.get(i).getFirst();
-            int to = intervalsListPairs.get(i).getSecond();
-            int len = to - from;
-
-            if (i > 0) {
-                from++;
-            }
-
-            if (i == intervalsListPairs.size() - 1) {
-                len++;
-            }
-            intervalQueriesList.add(new IntervalQuery(from, to, len));
-        }
-        return intervalQueriesList;
-    }
-
-    public static ArrayList<Pair<Integer, Integer>> createIntervalPairs(BoundaryConditions boundaryConditions,
+    public static  List<IntervalQuery>  createIntervalRequests(BoundaryConditions boundaryConditions,
                                                                         int nodesCount) {
-        int B = boundaryConditions.getBoundaryNodesCount();
-        int N = nodesCount;
+        List<IntervalQuery> queryList = new ArrayList<>();
+        int N = nodesCount / boundaryConditions.getDimCount();
+        boolean prevNodeInBound = true;
+        int start = -1;
+        Set<Integer> pointsIndInBound = boundaryConditions
+                .getBoundIndexes()
+                .stream()
+                .collect(Collectors.toSet());
 
-        List<Integer> intervalsList = new ArrayList<>();
-        ArrayList<Pair<Integer, Integer>> intervalsListPairs = new ArrayList<>();
-        intervalsList.add(0);
-        for(int k = 0; k < B; k++){
-            intervalsList.add(boundaryConditions.getBoundIndexAbs(k, 0));
+        int blockSize = boundaryConditions.getDimCount();
+        for(int i = 0 ; i < N; i++) {
+            boolean curNodeInBound = pointsIndInBound.contains(i);
+            // Start of the interval
+            if (prevNodeInBound && !curNodeInBound) {
+                start = i;
+            }
+            // End of interval, type of interval includes begin and - math notation []
+            if (curNodeInBound && !prevNodeInBound) {
+                IntervalQuery query = createAbsIntervalQuery(start, i , blockSize); // TODO:test i - 1 ?
+                queryList.add(query);
+            }
+            prevNodeInBound = curNodeInBound;
         }
-        intervalsList.add(N);
+        // Need to fix
+        if (!pointsIndInBound.contains(N - 1)) {
+            queryList.add(createAbsIntervalQuery(start, N - 1, blockSize));
+        }
+        return queryList;
+    }
 
-        for(int i = 0; i < B - 1; i++) {
-            int start = intervalsList.get(i);
-            int end = intervalsList.get(i + 1);
-            if (start == end) continue;
-            intervalsListPairs.add(Pair.create(start, end));
-        }
-        return intervalsListPairs;
+    private static IntervalQuery createAbsIntervalQuery(int startPoint, int endPoint, int blockSize) {
+        IntervalQuery query = new IntervalQuery(startPoint * blockSize, (endPoint ) * blockSize);
+        return query;
     }
 }

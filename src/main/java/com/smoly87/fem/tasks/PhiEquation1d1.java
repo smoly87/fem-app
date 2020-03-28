@@ -5,9 +5,12 @@
  */
 package com.smoly87.fem.tasks;
 
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditions;
 import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import org.apache.commons.math3.linear.*;
+
+import java.util.List;
 
 /**
  *
@@ -36,12 +39,16 @@ public class PhiEquation1d1 extends Task {
         
         K = fillGlobalStiffness(K, this::Klm);
         
-        double[] QBound = new double[]{0, 1};
-        Integer[] boundNodes = new Integer[]{0, mesh.getNodesCount()-1};
-        boundaryConitions = new BoundaryConditionsOld(QBound, boundNodes);
-        
-        F = this.applyBoundaryConditionsToRightPart(K, F, boundaryConitions);
-        K = this.applyBoundaryConditionsToLeftPart(K,  boundaryConitions);
+
+
+        boundaryConditions = BoundaryConditions.builder(1)
+                .setPointIndexes(List.of(0, mesh.getNodesCount() - 1))
+                .addValues(new double[]{0, 1})
+                .build();
+
+
+        F = boundaryConditions.applyBoundaryConditionsToRightPart(K, F);
+        K = boundaryConditions.applyBoundaryConditionsToLeftPart(K);
 
     }
 

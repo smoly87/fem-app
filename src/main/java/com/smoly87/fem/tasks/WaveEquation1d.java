@@ -6,6 +6,7 @@
 package com.smoly87.fem.tasks;
 
 import com.google.inject.Inject;
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditions;
 import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.core.*;
 import com.smoly87.rendering.*;
@@ -77,14 +78,15 @@ public class WaveEquation1d extends Task {
         C = new Array2DRowRealMatrix(N, N);
         C = fillGlobalStiffness(C, this::Clm);
         F = fillForces(F); //No need forces!
-        double[] QBound = new double[]{0, 0}; // Fix nodes position on the both end of the string.
-        Integer[] boundNodes = new Integer[]{0, mesh.getNodesCount() - 1};
-        boundaryConitions = new BoundaryConditionsOld(QBound, boundNodes);
 
-        F = this.applyBoundaryConditionsToRightPart(K, F, boundaryConitions);
-        K = this.applyBoundaryConditionsToLeftPart(K,  boundaryConitions);
-        C = this.applyBoundaryConditionsToLeftPart(C,  boundaryConitions);
+         boundaryConditions = BoundaryConditions.builder(1)
+                .setPointIndexes(List.of(0, mesh.getNodesCount() - 1))
+                .addValues(new double[]{0, 0})
+                .build();
 
+        F = boundaryConditions.applyBoundaryConditionsToRightPart(K, F);
+        K = boundaryConditions.applyBoundaryConditionsToLeftPart(K);
+        C = boundaryConditions.applyBoundaryConditionsToLeftPart(C);
     }
 
     protected StepHandler createStepHandler() {
@@ -174,7 +176,7 @@ public class WaveEquation1d extends Task {
 
 
     private void visualizeStaticSolution(double[] y) {
-        y = restoreBoundary(y, boundaryConitions);
+        y = boundaryConditions.restoreBoundaryConditions(y);
         List<Vector2D> vertexes = new ArrayList<>();
         int N = y.length ; // First N are velocities since the system was converted from the second order to first.
         for(int i = 0; i < N; i++) {

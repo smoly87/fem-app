@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import com.smoly87.fem.core.boundaryconditions.BoundaryConditions;
 import com.smoly87.fem.core.boundaryconditions.BoundaryConditionsOld;
 import com.smoly87.fem.tasks.CustomRungeCutta;
 import org.apache.commons.math3.linear.*;
@@ -30,10 +31,10 @@ public class Task {
     protected RealMatrix K;
     protected RealVector F;
     protected Mesh mesh;
-    protected BoundaryConditionsOld boundaryConitions;
+    protected BoundaryConditions boundaryConditions;
  
-    public BoundaryConditionsOld getBoundaryConitions() {
-        return boundaryConitions;
+    public BoundaryConditions getBoundaryConditions() {
+        return boundaryConditions;
     }
     
     public Mesh getMesh() {
@@ -82,6 +83,7 @@ public class Task {
         return applyBoundaryConditionsToLeftPart(KG, List.of(boundaryConditions));
     }
 
+    // Remove once the uniform boundary conditions starts to work.
     protected RealMatrix applyBoundaryConditionsToLeftPart(RealMatrix KG,
                                                            List<BoundaryConditionsOld> boundaryConditionsList) {
         BoundaryConditionsOld boundaryConditions = boundaryConditionsList.get(0);
@@ -242,22 +244,22 @@ public class Task {
         return R;
     }
 
-     protected double[][] convertSolution(RealVector X, BoundaryConditionsOld boundaryCond, int timeSteps ){
+     /*protected double[][] convertSolution(RealVector X, BoundaryConditionsOld boundaryCond, int timeSteps ){
         double [] data = X.toArray();
-        int BN = boundaryConitions.getNodesCount();
+        int BN = boundaryConditions.getNodesCount();
         int N = data.length / timeSteps  ;
         double[][] res = new double[timeSteps + 1][N + BN];
         for(int t = 0; t < timeSteps; t++){
             double[] values = new double[N];
             System.arraycopy(data, t * N, values, 0, N);
-            values = restoreBoundary(values, boundaryConitions); 
+            values = restoreBoundary(values, boundaryConditions);
             res[t + 1] = values;
         }
         
-        res[0] = restoreBoundary(boundaryCond.getBoundNodes(), boundaryConitions);
+        res[0] = restoreBoundary(boundaryCond.getBoundNodes(), boundaryConditions);
         
         return res ;
-    }
+    }*/
      
     protected RealMatrix fillGlobalStiffness(RealMatrix M, KlmFunction klmFunc) {
         ArrayList<Element> elements = mesh.getElements();
